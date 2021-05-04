@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Body, Post, Delete, Query } from '@nestjs/common';
+import { Controller, Get, Param, Body, Post, Delete, Query, Res, HttpStatus, NotFoundException } from '@nestjs/common';
 import { CoursesService } from './courses.service';
 import { CreateCourseDto } from './create-course.dto';
 
@@ -7,26 +7,31 @@ export class CoursesController {
   constructor(private courseService: CoursesService) {}
 
   @Get()
-  async getCourseList() {
+  async getCourseList(@Res() res) {
     const courses = await this.courseService.getCourses();
-    return courses;
+    return res.status(HttpStatus.OK).json(courses);;
   }
 
   @Get(':courseId')
-  async getCourse(@Param('courseId') courseId){
+  async getCourse(@Res() res, @Param('courseId') courseId){
       const course = await this.courseService.getCourse(courseId);
-      return course;
+      if (!course) throw new NotFoundException('Course does not exist!');
+        return res.status(HttpStatus.OK).json(course);
   }
 
   @Post()
-  async postCourse(@Body()createCourseDto: CreateCourseDto){
+  async postCourse(@Res() res, @Body()createCourseDto: CreateCourseDto){
     const course = await this.courseService.addCourse(createCourseDto);
-    return course;
+    return res.status(HttpStatus.OK).json({
+      message: "Course has been created successfully",
+      course
+  })
   }
 
   @Delete()
-  async deleteCourse(@Query() query){
+  async deleteCourse(@Res() res, @Query() query){
     const courses = await this.courseService.deleteCourse(query.courseId);
-    return courses;
+    if (!courses) throw new NotFoundException('Course does not exist!');
+        return res.status(HttpStatus.OK).json({message: "Course has been deleted", courses});
   }
 }

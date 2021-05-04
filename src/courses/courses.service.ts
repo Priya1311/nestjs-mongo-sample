@@ -1,44 +1,32 @@
-import { Injectable, HttpException } from '@nestjs/common';
-import { COURSES } from './courses.mock';
-import { resolve } from 'dns';
+import { Injectable } from "@nestjs/common";
+import { InjectModel } from "@nestjs/mongoose";
+import { Model } from "mongoose";
+import { CreateCourseDto } from "./create-course.dto";
+import { Courses } from "./courses.interface";
 
 @Injectable()
 export class CoursesService {
-    courses = COURSES;
+  constructor(
+    @InjectModel("Courses") private readonly courseModel: Model<Courses>
+  ) {}
 
-    getCourses(): Promise<any>{
-        return new Promise(resolve=>{
-           resolve(this.courses);
-        } )  
-    }
+  async getCourses(): Promise<Courses[]> {
+    const courseList = await this.courseModel.find().exec();
+    return courseList;
+  }
 
-    getCourse(courseId): Promise<any>{
-        let id = Number(courseId);
-        return new Promise(resolve=>{
-            const course = this.courses.find(c=>c.id === id);
-            if(!course){
-                throw new HttpException('course does not exist', 404);
-            }
-            resolve(course);
-        })
-    }
+  async getCourse(courseId): Promise<Courses> {
+    const course = await this.courseModel.findById(courseId).exec();
+    return course;
+  }
 
-    addCourse(course):Promise<any>{
-        return new Promise(resolve=>{
-            this.courses.push(course);
-            resolve(this.courses);
-        })
-    }
+  async addCourse(courseDto: CreateCourseDto): Promise<Courses> {
+    const newCourse = await new this.courseModel(courseDto);
+    return newCourse.save();
+  }
 
-    deleteCourse(courseId): Promise<any>{
-        let id = Number(courseId);
-        return new Promise(resolve=>{
-            const courseIndex = this.courses.findIndex(c=> c.id === id);
-            if(courseIndex === -1){
-                throw new HttpException('Course does not exist', 404);
-            }
-            this.courses.splice(courseIndex, 1);
-            resolve(this.courses);
-        })
-    }
+  async deleteCourse(courseId): Promise<any> {
+    const deletedCustomer = await this.courseModel.findByIdAndRemove(courseId);
+    return deletedCustomer;
+  }
 }
